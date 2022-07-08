@@ -4,7 +4,10 @@ import Image from 'next/image'
 import styles from '../styles/Home.module.css'
 import * as Sentry from "@sentry/react";
 import { createStore, compose } from "redux";
-
+interface dataState {
+  data: any,
+  errorDetails: any
+}
 const sentryReduxEnhancer = Sentry.createReduxEnhancer({
   // Optionally pass options listed below
 });
@@ -18,29 +21,25 @@ Sentry.init({
 
 const Home: NextPage = () => {
   const sampleReducer = (state: any, action: any) => {
-    if (typeof state === 'undefined') {
-      return 0
-    }
-
     switch (action.type) {
       case 'BING':
-        return "BONG"
+        return { ...state, data: 'BONG' }
       case 'PING':
-        return "PONG"
+        return { ...state, data: 'PONG' }
       case 'ERROR_FROM_APP':
-        return "OOPSIE"
+        return { ...state, errorDetails: 'BING! BONG! Something Went Wrong!' }
       default:
         return state
     }
   }
   const store = createStore(sampleReducer, sentryReduxEnhancer);
 
-  const dispatch = (reducerType: string) => {
-    store.dispatch({ type: `${reducerType}` });      
+  const dispatchAction = (reducerType: string) => {
+    store.dispatch({ type: `${reducerType}` });  
     try {
-      if (reducerType == 'ERROR_FROM_APP') throw(new Error('I just broke the wolrd.'))
+      if (reducerType == 'ERROR_FROM_APP') throw(new Error(JSON.stringify(store.getState())))
     } catch (error) {
-      Sentry.captureException(error, store.getState());
+      Sentry.captureException(error);
     }
   }
 
@@ -57,9 +56,9 @@ const Home: NextPage = () => {
           Welcome to <a href="https://nextjs.org">Next.js!</a>
         </h1>
 
-        <button onClick={() => { dispatch('ERROR_FROM_APP')}}>Break the world</button>
-        <button onClick={() => { dispatch('BING')}}>BING</button>
-        <button onClick={() => { dispatch('PING')}}>PING</button>
+        <button onClick={() => { dispatchAction('ERROR_FROM_APP')}}>Break the world</button>
+        <button onClick={() => { dispatchAction('BING')}}>BING</button>
+        <button onClick={() => { dispatchAction('PING')}}>PING</button>
         
 
         <p className={styles.description}>
